@@ -1,0 +1,70 @@
+name: Distribute template updates
+on:
+  push:
+    branch: 
+      - master
+      - main
+    paths:
+      - '.github/workflows/*'
+      - '.github/defaults/*'
+
+jobs:
+  Get-repo-list:
+    # Get repos that need to be updated 
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+    steps:
+    - name: Find all workable repos
+      id: repo_list
+      uses: boyagm/fetch-repo-list
+      with:
+        last_active: 28
+        template: "SFLScientific/SFL-Template"
+        token: ${{ secrets.readandwrite }}
+
+    - name: Pass repo list to output
+      id: set-matrix
+      run: |
+        echo "${{ steps.repo_list.outputs.repo_list }}" > repo.json
+        JSON=$(cat repo.json)
+        echo "::set-output name=matrix::${JSON//'%'/'%25'}"
+
+  Distribute-updates:
+    needs: Get-repo-list
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{fromJson(needs.Get-repo-list.outputs.matrix)}}
+
+    steps:
+    - name: Fetch the template master
+      uses: actions/checkout@master
+      with:
+        path: template
+        lfs: False
+
+    - name: Fetch the project repo master
+      uses: actions/checkout@master
+      with:
+        path: project
+        lfs: False
+        repository: ${{ matrix.repo }}
+        token: ${{ secrets.readandwrite }}
+
+    - name: Populate changes
+      run: |
+        cp -r template/.github/workflows project/.github
+        cp -r template/.github/defaults project/.github 
+        
+    - name: Open a PR for updates
+      uses: peter-evans/create-pull-request@v3.5.0
+      with:
+        commit-message: Fetch template Github Action updates
+        committer: AutoCommit <example@users.noreply.github.com>
+        title: Update Github Actions
+        body: This is an auto-generated PR with most recent updated in template Github Actions.
+        labels: Github-action-updates, automated pr
+        branch: template-action-updates
+        path: project
+        token: ${{ secrets.readandwrite }}

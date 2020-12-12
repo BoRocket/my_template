@@ -18,7 +18,7 @@ jobs:
     steps:
     - name: Find all workable repos
       id: repo_list
-      uses: boyagm/fetch-repo-list
+      uses: boyagm/fetch-repo-list@main
       with:
         last_active: 28
         template: "SFLScientific/SFL-Template"

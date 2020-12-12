@@ -21,7 +21,7 @@ jobs:
       uses: boyagm/fetch-repo-list@main
       with:
         last_active: 28
-        template: "SFLScientific/SFL-Template"
+        # template: "SFLScientific/SFL-Template"
         token: ${{ secrets.readandwrite }}
 
     - name: Pass repo list to output
